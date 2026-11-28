@@ -24,8 +24,19 @@ L'archive `build/majestic-depot-<date>.zip` contient le code et le dossier `vend
 
 ## 3. Base de données
 
-Créer la base et l'utilisateur dans « Bases de données MySQL ».
-Pour lancer les migrations sans terminal, ajouter **temporairement** une tâche Cron :
+Créer la base et l'utilisateur dans « Bases de données MySQL » (mot de passe en lettres et chiffres
+uniquement), associer l'utilisateur à la base avec **tous les privilèges**.
+
+### Méthode recommandée : page de mise à jour par jeton
+
+1. Ajouter dans `.env` une ligne `DEPLOY_TOKEN=` suivie d'un jeton aléatoire d'au moins 32 caractères.
+2. Ouvrir `https://manager.protaiin.com/maintenance/migrate/<DEPLOY_TOKEN>` : les migrations
+   s'exécutent ; sur une base vide, les données de départ (entreprise, compte propriétaire) sont créées.
+3. Vider ou changer `DEPLOY_TOKEN` une fois terminé.
+
+### Autre méthode : tâche Cron temporaire
+
+Ajouter **temporairement** une tâche Cron :
 
 ```
 php /home/<compte>/majestic-depot/artisan migrate --force --seed >> /home/<compte>/majestic-depot/storage/logs/deploy.log 2>&1
