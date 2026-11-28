@@ -68,6 +68,12 @@ return [
     'timezone' => env('APP_TIMEZONE', 'Africa/Douala'),
 
     /*
+    | Jeton de la page de mise à jour de la base sans SSH (DeployController).
+    | Vide = page désactivée.
+    */
+    'deploy_token' => env('DEPLOY_TOKEN', ''),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
