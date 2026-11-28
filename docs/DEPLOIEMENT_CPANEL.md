@@ -59,3 +59,12 @@ La file d'attente utilise la base de données (`QUEUE_CONNECTION=database`) : pa
 - HTTPS actif (AutoSSL), `APP_DEBUG=false`.
 - `https://manager.protaiin.com/.env` doit renvoyer une erreur (fichier hors racine publique).
 - Connexion sur `https://manager.protaiin.com/app`.
+
+## API pour Claude (enregistrement des factures et fiches de vente)
+
+1. Dans l'application : **Paramètres › Accès API (Claude)** › « Créer un jeton ». Copiez le jeton (`mjd_…`), il n'est affiché qu'une fois.
+2. Transmettez-le à Claude par un canal privé. Révocable à tout moment depuis la même page.
+3. Points d'entrée (`/api/v1/…`, en-tête `Authorization: Bearer mjd_…`) :
+   - lecture : `catalogue`, `stock`, `journee?date=AAAA-MM-JJ`, `caisse` ;
+   - écriture (en-tête `Idempotency-Key` obligatoire) : `fournisseurs`, `clients`, `achats`, `ventes`, `caisse/ouvrir`, `caisse/cloturer`.
+   La validation de la clôture de caisse reste faite par le propriétaire dans l'application.

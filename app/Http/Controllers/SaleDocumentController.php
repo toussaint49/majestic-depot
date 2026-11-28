@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\PackagingType;
 use App\Models\Payment;
 use App\Models\Sale;
 use App\Services\PackagingService;
@@ -21,7 +22,7 @@ class SaleDocumentController extends Controller
         $sale = Sale::with(['lines', 'customer', 'user', 'depot', 'payments.account'])->findOrFail($sale);
 
         $empties = $sale->lines->isEmpty() ? [] : app(PackagingService::class)->required($sale->lines->map(fn ($l) => [$l->product_unit_id, $l->quantity])->all());
-        $emptyNames = \App\Models\PackagingType::whereIn('id', array_keys($empties))->pluck('name', 'id');
+        $emptyNames = PackagingType::whereIn('id', array_keys($empties))->pluck('name', 'id');
 
         $height = 330 + 26 * $sale->lines->count() + 14 * $sale->payments->count() + 14 * count($empties);
         $pdf = Pdf::loadView('pdf.ticket', [
