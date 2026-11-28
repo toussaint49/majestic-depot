@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Exceptions\SaleException;
-use App\Models\AccountTransaction;
 use App\Models\Customer;
+use App\Models\Depot;
 use App\Models\Payment;
 use App\Models\PaymentAccount;
 use App\Models\PaymentAllocation;
@@ -19,7 +19,11 @@ use Illuminate\Support\Facades\DB;
  */
 class PaymentService
 {
-    public function __construct(private SequenceService $sequences) {}
+    public function __construct(
+        private SequenceService $sequences,
+        private AccountLedger $ledger,
+        private CashSessionService $cash,
+    ) {}
 
     /** Paiement reçu au moment de la vente. */
     public function recordSalePayment(Sale $sale, PaymentAccount $account, int $amount, ?string $reference = null, DateTimeInterface|string|null $occurredAt = null): Payment
@@ -30,9 +34,10 @@ class PaymentService
                 throw new SaleException('Le paiement dépasse le reste dû de la vente.');
             }
 
-            $payment = $this->create($account, $amount, $sale->customer_id, $sale->id, $reference, $occurredAt ?? $sale->occurred_at);
+            $session = $this->cash->forPayment($sale->depot);
+            $payment = $this->create($sale->depot, $account, $amount, $sale->customer_id, $sale->id, $reference, $occurredAt ?? $sale->occurred_at);
             PaymentAllocation::create(['payment_id' => $payment->id, 'sale_id' => $sale->id, 'amount' => $amount]);
-            $this->post($account, $amount, 'sale_payment', $payment, "Vente {$sale->number}", $payment->occurred_at);
+            $this->ledger->post($account, $amount, 'sale_payment', $payment, "Vente {$sale->number}", $payment->occurred_at, $session);
 
             return $payment;
         });
@@ -42,9 +47,9 @@ class PaymentService
      * Règlement d'un client : affecté à la vente indiquée, sinon aux ventes les plus anciennes.
      * Pas d'avance en V1 : le montant ne peut pas dépasser ce que doit le client.
      */
-    public function recordCustomerPayment(Customer $customer, PaymentAccount $account, int $amount, ?Sale $sale = null, ?string $reference = null, DateTimeInterface|string|null $occurredAt = null): Payment
+    public function recordCustomerPayment(Customer $customer, PaymentAccount $account, int $amount, ?Sale $sale = null, ?string $reference = null, DateTimeInterface|string|null $occurredAt = null, ?Depot $depot = null): Payment
     {
-        return DB::transaction(function () use ($customer, $account, $amount, $sale, $reference, $occurredAt) {
+        return DB::transaction(function () use ($customer, $account, $amount, $sale, $reference, $occurredAt, $depot) {
             $this->assertUsable($account, $amount);
             Customer::whereKey($customer->id)->lockForUpdate()->first();
 
@@ -61,7 +66,10 @@ class PaymentService
                 throw new SaleException(sprintf('Le client ne doit que %s FCFA.', number_format($due, 0, ',', ' ')));
             }
 
-            $payment = $this->create($account, $amount, $customer->id, null, $reference, $occurredAt);
+            // Dépôt qui encaisse : celui indiqué, sinon celui de la vente réglée en premier.
+            $depot ??= $open->first()->depot;
+            $session = $this->cash->forPayment($depot);
+            $payment = $this->create($depot, $account, $amount, $customer->id, null, $reference, $occurredAt);
             $left = $amount;
             foreach ($open as $openSale) {
                 if ($left === 0) {
@@ -72,7 +80,7 @@ class PaymentService
                 $left -= $part;
             }
 
-            $this->post($account, $amount, 'customer_payment', $payment, "Règlement {$customer->name}", $payment->occurred_at);
+            $this->ledger->post($account, $amount, 'customer_payment', $payment, "Règlement {$customer->name}", $payment->occurred_at, $session);
 
             return $payment;
         });
@@ -98,15 +106,18 @@ class PaymentService
                 'cancel_reason' => $reason,
             ])->save();
 
-            $this->post($payment->account, -$payment->amount, 'payment_cancel', $payment, "Annulation {$payment->number} : $reason", now());
+            // L'argent rendu sort de la caisse ouverte aujourd'hui.
+            $session = $payment->depot ? $this->cash->forPayment($payment->depot) : null;
+            $this->ledger->post($payment->account, -$payment->amount, 'payment_cancel', $payment, "Annulation {$payment->number} : $reason", now(), $session);
 
             return $payment;
         });
     }
 
-    private function create(PaymentAccount $account, int $amount, ?int $customerId, ?int $saleId, ?string $reference, DateTimeInterface|string|null $occurredAt): Payment
+    private function create(Depot $depot, PaymentAccount $account, int $amount, ?int $customerId, ?int $saleId, ?string $reference, DateTimeInterface|string|null $occurredAt): Payment
     {
         return Payment::create([
+            'depot_id' => $depot->id,
             'number' => $this->sequences->next('payment'),
             'customer_id' => $customerId,
             'sale_id' => $saleId,
@@ -118,19 +129,6 @@ class PaymentService
         ]);
     }
 
-    private function post(PaymentAccount $account, int $amount, string $type, Payment $payment, string $label, DateTimeInterface $occurredAt): void
-    {
-        AccountTransaction::create([
-            'payment_account_id' => $account->id,
-            'type' => $type,
-            'amount' => $amount,
-            'source_type' => $payment->getMorphClass(),
-            'source_id' => $payment->id,
-            'label' => $label,
-            'user_id' => auth()->id(),
-            'occurred_at' => $occurredAt,
-        ]);
-    }
 
     private function assertUsable(PaymentAccount $account, int $amount): void
     {

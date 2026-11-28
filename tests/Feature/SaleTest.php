@@ -88,6 +88,7 @@ class SaleTest extends TestCase
         $this->momo = PaymentAccount::where('kind', 'mtn_momo')->firstOrFail();
         $this->om = PaymentAccount::where('kind', 'orange_money')->firstOrFail();
         $this->customer = Customer::create(['name' => 'Bar La Joie', 'phone' => '690000000']);
+        $this->openCash();
     }
 
     private function sell(array $lines, array $payments = [], array $extra = []): Sale

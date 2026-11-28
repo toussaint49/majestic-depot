@@ -67,6 +67,19 @@ php artisan test
   Une vente qui a reçu des règlements ultérieurs ne s'annule qu'après annulation de ces règlements.
 - Documents : ticket 80 mm (`/t/{entreprise}/ventes/{id}/ticket`) et relevé client (`/t/{entreprise}/clients/{id}/releve`).
 
+## Règles de caisse
+
+- Une session de caisse par dépôt : ouverture (fond compté), encaissements, apports et retraits,
+  clôture (comptage par compte), validation par un responsable. Tout encaissement exige une caisse
+  ouverte (réglable par entreprise : `require_cash_session`) ; une vente entièrement à crédit n'en exige pas.
+- Théorique par compte = fond de caisse (espèces) + écritures rattachées à la session.
+- À la validation, chaque écart est passé en écriture « Écart de caisse » : le grand livre reste égal
+  à l'argent réellement compté. Une session validée n'est plus modifiable ; toute correction passe
+  par une opération motivée dans une session suivante.
+- Pas de nouvelle ouverture tant que la clôture précédente n'est pas validée. Le fond proposé à
+  l'ouverture est le montant compté à la dernière clôture ; un écart à l'ouverture exige un motif.
+- Droits : caissier = ouvrir / clôturer ; gérant et propriétaire = apports, retraits, validation.
+
 ## Déploiement
 
 Voir [docs/DEPLOIEMENT_CPANEL.md](docs/DEPLOIEMENT_CPANEL.md).
@@ -77,4 +90,4 @@ Voir [docs/DEPLOIEMENT_CPANEL.md](docs/DEPLOIEMENT_CPANEL.md).
 2. ✅ Catalogue et stock (bouteille/casier, CUMP, inventaires, stock négatif bloqué)
 3. ✅ Emballages vides (échange obligatoire à la vente, retours fournisseur)
 4. ✅ Ventes et clients (espèces, MTN MoMo, Orange Money, crédit 14 jours, ticket PDF, annulation)
-5. Caisse et clôture journalière
+5. ✅ Caisse et clôture journalière
