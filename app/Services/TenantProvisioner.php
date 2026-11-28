@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Depot;
+use App\Models\PaymentAccount;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\CurrentTenant;
@@ -39,6 +40,9 @@ class TenantProvisioner
                 $this->syncRoles($tenant);
                 $owner->assignRole(Roles::PROPRIETAIRE);
                 Depot::create(['name' => $depotName, 'code' => 'DEP01']);
+                foreach (PaymentAccount::DEFAULTS as $account) {
+                    PaymentAccount::create($account);
+                }
             });
 
             return $tenant;

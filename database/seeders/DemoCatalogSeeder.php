@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\StockMovementType;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Depot;
 use App\Models\PackagingType;
 use App\Models\Product;
@@ -65,6 +66,10 @@ class DemoCatalogSeeder extends Seeder
                     }
                 }
                 $stock->receive($depot, $product, $qty, $cost, StockMovementType::Initial, reason: 'Stock de démonstration');
+            }
+
+            foreach ([['Bar La Joie', '690000001'], ['Snack Le Carrefour', '670000002'], ['Mme Ngo (boutique)', '650000003']] as [$name, $phone]) {
+                Customer::firstOrCreate(['name' => $name], ['phone' => $phone]);
             }
 
             if ($packaging->available($depot, $ca12) === 0) {

@@ -33,6 +33,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->navigationGroups(['Ventes', 'Stock', 'Emballages vides', 'Catalogue', 'Trésorerie', 'Paramètres'])
             ->tenant(Tenant::class, slugAttribute: 'slug')
             ->tenantMiddleware([
                 ApplyTenantContext::class,
