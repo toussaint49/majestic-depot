@@ -16,6 +16,8 @@ cd "$WORK"
 composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 php artisan filament:assets --no-interaction >/dev/null
 rm -rf tests phpunit.xml .github node_modules build
+# Dépendances installées depuis les sources : on retire leurs dépôts git.
+find vendor -name .git -type d -prune -exec rm -rf {} +
 
 cd "$ROOT/build/release" && zip -qr "$OUT" . -x '.env'
 echo "Archive prête : $OUT"
