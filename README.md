@@ -53,6 +53,20 @@ php artisan test
 - Règle du pilote : **pas de vides, pas de vente**. Pas de caution, pas de solde d'emballages par client.
   `collectForSale()` vérifie les vides rapportés et les entre en stock ; `reverseSaleExchange()` les rend en cas d'annulation.
 
+## Règles des ventes et encaissements
+
+- `SaleService::create()` enregistre dans **une seule transaction** : lignes (avec instantané du prix,
+  du conditionnement et du coût), sorties de stock, échange des vides, encaissements par compte.
+  Si une étape échoue (stock insuffisant, vides manquants…), rien n'est enregistré.
+- Montant de la vente, argent réellement encaissé et reste dû sont distincts. Exemple : 90 000 FCFA
+  payés 40 000 en espèces + 30 000 MTN MoMo → 70 000 encaissés, 20 000 dus par le client.
+- Pas de remise : les prix viennent du catalogue. Le montant encaissé ne peut pas dépasser le total.
+- Crédit : client obligatoire, échéance = date de vente + délai du client (14 jours par défaut).
+  Les règlements soldent d'abord les ventes les plus anciennes ; pas d'avance client en V1.
+- Annulation complète par contrepassation (stock au coût d'origine, vides rendus, encaissements annulés).
+  Une vente qui a reçu des règlements ultérieurs ne s'annule qu'après annulation de ces règlements.
+- Documents : ticket 80 mm (`/t/{entreprise}/ventes/{id}/ticket`) et relevé client (`/t/{entreprise}/clients/{id}/releve`).
+
 ## Déploiement
 
 Voir [docs/DEPLOIEMENT_CPANEL.md](docs/DEPLOIEMENT_CPANEL.md).
@@ -62,5 +76,5 @@ Voir [docs/DEPLOIEMENT_CPANEL.md](docs/DEPLOIEMENT_CPANEL.md).
 1. ✅ Socle : entreprises, utilisateurs, rôles, audit, dépôts
 2. ✅ Catalogue et stock (bouteille/casier, CUMP, inventaires, stock négatif bloqué)
 3. ✅ Emballages vides (échange obligatoire à la vente, retours fournisseur)
-4. Ventes et clients (espèces, MTN MoMo, Orange Money, crédit 14 jours, ticket PDF, annulation)
+4. ✅ Ventes et clients (espèces, MTN MoMo, Orange Money, crédit 14 jours, ticket PDF, annulation)
 5. Caisse et clôture journalière
