@@ -19,6 +19,9 @@ class AccountTransaction extends Model
         'sale_payment' => 'Encaissement vente',
         'customer_payment' => 'Règlement client',
         'payment_cancel' => 'Annulation encaissement',
+        'cash_deposit' => 'Apport',
+        'cash_withdrawal' => 'Retrait',
+        'cash_difference' => 'Écart de caisse',
     ];
 
     protected $guarded = ['id', 'tenant_id'];
@@ -37,6 +40,11 @@ class AccountTransaction extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(PaymentAccount::class, 'payment_account_id');
+    }
+
+    public function cashSession(): BelongsTo
+    {
+        return $this->belongsTo(CashSession::class);
     }
 
     public function source(): MorphTo

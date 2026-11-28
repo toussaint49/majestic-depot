@@ -47,6 +47,7 @@ class SalePanelTest extends TestCase
         $this->crate->packagings()->create(['packaging_type_id' => $empty->id, 'quantity' => 12]);
         app(StockService::class)->receive(Depot::first(), $beer, 240, 500);
         $this->customer = Customer::create(['name' => 'Bar La Joie']);
+        $this->openCash();
     }
 
     private function enter(User $user): void

@@ -17,6 +17,7 @@ class SequenceService
         'purchase' => 'ACH-',
         'payment' => 'REC-',
         'expense' => 'DEP-',
+        'cash_session' => 'CAI-',
     ];
 
     public function next(string $key): string

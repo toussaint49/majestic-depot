@@ -15,13 +15,13 @@ class Tenant extends Model
 {
     use Auditable, HasFactory;
 
-    protected $attributes = ['is_active' => true, 'default_credit_days' => 14];
+    protected $attributes = ['is_active' => true, 'default_credit_days' => 14, 'require_cash_session' => true];
 
-    protected $fillable = ['name', 'slug', 'currency', 'timezone', 'phone', 'email', 'address', 'tax_number', 'default_credit_days', 'is_active'];
+    protected $fillable = ['name', 'slug', 'currency', 'timezone', 'phone', 'email', 'address', 'tax_number', 'default_credit_days', 'require_cash_session', 'is_active'];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return ['is_active' => 'boolean', 'require_cash_session' => 'boolean'];
     }
 
     public function users(): BelongsToMany
