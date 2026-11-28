@@ -17,6 +17,7 @@ composer install
 cp .env.example .env && php artisan key:generate
 touch database/database.sqlite
 php artisan migrate --seed
+php artisan db:seed --class=DemoCatalogSeeder   # catalogue de démonstration (local)
 php artisan serve        # http://localhost:8000/app  (admin@majestic.test / password)
 php artisan test
 ```
@@ -31,6 +32,18 @@ php artisan test
 - **Audit** : `Auditable` journalise création, modification et suppression ; le journal est immuable.
 - **Pas de suppression** des opérations validées : on annule par contrepassation.
 
+## Règles de stock
+
+- Les quantités sont stockées en **unité de base** (ex. bouteille) ; chaque produit a des
+  conditionnements (Casier ×12, Pack ×6…) avec leur prix de vente.
+- Tout mouvement passe par `StockService` : solde verrouillé, contrôle, mouvement immuable,
+  mise à jour du solde et du CUMP, dans une seule transaction. **Stock négatif interdit.**
+- CUMP : recalculé aux entrées valorisées (stock initial, achat, retour de vente, transfert reçu) ;
+  les sorties, pertes, ajustements et écarts d'inventaire passent au CUMP courant sans le modifier.
+- Inventaire : comptage en brouillon (magasinier), validation (gérant/propriétaire) qui fige le
+  stock théorique et passe les écarts en mouvements.
+- Date réelle (`occurred_at`) distincte de la date de saisie : permet la saisie différée des fiches papier.
+
 ## Déploiement
 
 Voir [docs/DEPLOIEMENT_CPANEL.md](docs/DEPLOIEMENT_CPANEL.md).
@@ -38,7 +51,7 @@ Voir [docs/DEPLOIEMENT_CPANEL.md](docs/DEPLOIEMENT_CPANEL.md).
 ## Feuille de route MVP
 
 1. ✅ Socle : entreprises, utilisateurs, rôles, audit, dépôts
-2. Catalogue et stock (bouteille/casier, CUMP, inventaires, stock négatif bloqué)
+2. ✅ Catalogue et stock (bouteille/casier, CUMP, inventaires, stock négatif bloqué)
 3. Emballages vides (échange obligatoire à la vente, retours fournisseur)
 4. Ventes et clients (espèces, MTN MoMo, Orange Money, crédit 14 jours, ticket PDF, annulation)
 5. Caisse et clôture journalière
