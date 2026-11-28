@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Products;
 use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
+use App\Models\PackagingType;
 use App\Models\Product;
 use App\Support\Quantity;
 use BackedEnum;
@@ -86,6 +87,19 @@ class ProductResource extends Resource
                         TextInput::make('name')->label('Conditionnement')->required()->maxLength(30)->placeholder('Casier'),
                         TextInput::make('factor')->label("Nombre d'unités de base")->required()->integer()->minValue(1)->placeholder('12'),
                         TextInput::make('price')->label('Prix de vente (FCFA)')->required()->integer()->minValue(0),
+                        Repeater::make('packagings')->label('Vides à échanger pour 1 unité de ce conditionnement')
+                            ->relationship()
+                            ->columnSpanFull()
+                            ->columns(2)
+                            ->defaultItems(0)
+                            ->addActionLabel('Ajouter un emballage consigné')
+                            ->helperText('Laisser vide pour un produit non consigné (ex. eau en bouteille plastique).')
+                            ->schema([
+                                Select::make('packaging_type_id')->label('Emballage')->required()
+                                    ->options(fn () => PackagingType::where('is_active', true)->orderBy('name')->pluck('name', 'id'))
+                                    ->disableOptionsWhenSelectedInSiblingRepeaterItems(),
+                                TextInput::make('quantity')->label('Quantité')->required()->integer()->minValue(1),
+                            ]),
                     ]),
             ]),
         ]);

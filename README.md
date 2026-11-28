@@ -44,6 +44,15 @@ php artisan test
   stock théorique et passe les écarts en mouvements.
 - Date réelle (`occurred_at`) distincte de la date de saisie : permet la saisie différée des fiches papier.
 
+## Règles des emballages vides
+
+- Sous-système indépendant du stock de boissons : types d'emballages (bouteille vide 65cl, casier 12…)
+  et stock de vides par dépôt (`PackagingService`), mouvements immuables, stock négatif interdit.
+- Chaque conditionnement déclare les vides à échanger pour 1 unité vendue
+  (ex. Casier → 12 bouteilles vides + 1 casier ; Bouteille → 1 bouteille vide ; eau PET → rien).
+- Règle du pilote : **pas de vides, pas de vente**. Pas de caution, pas de solde d'emballages par client.
+  `collectForSale()` vérifie les vides rapportés et les entre en stock ; `reverseSaleExchange()` les rend en cas d'annulation.
+
 ## Déploiement
 
 Voir [docs/DEPLOIEMENT_CPANEL.md](docs/DEPLOIEMENT_CPANEL.md).
@@ -52,6 +61,6 @@ Voir [docs/DEPLOIEMENT_CPANEL.md](docs/DEPLOIEMENT_CPANEL.md).
 
 1. ✅ Socle : entreprises, utilisateurs, rôles, audit, dépôts
 2. ✅ Catalogue et stock (bouteille/casier, CUMP, inventaires, stock négatif bloqué)
-3. Emballages vides (échange obligatoire à la vente, retours fournisseur)
+3. ✅ Emballages vides (échange obligatoire à la vente, retours fournisseur)
 4. Ventes et clients (espèces, MTN MoMo, Orange Money, crédit 14 jours, ticket PDF, annulation)
 5. Caisse et clôture journalière
